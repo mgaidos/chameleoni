@@ -1,8 +1,20 @@
 {
+/* sub-chapter scroll-spy: highlights the current item, clears it when you leave the chapter,
+   keeps the active pill visible in the horizontally scrolling mobile bar */
 const links=[...document.querySelectorAll('.side a')];
 const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
-const io=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)continue;const a=map.get(e.target.id);if(!a)continue;a.parentElement.querySelectorAll('a').forEach(x=>x.classList.toggle('on',x===a))}},{rootMargin:'-35% 0px -55% 0px'});
+const mark=a=>{const nav=a.parentElement;nav.querySelectorAll('a').forEach(x=>x.classList.toggle('on',x===a));
+if(nav.scrollWidth>nav.clientWidth){const l=a.offsetLeft-nav.clientWidth/2+a.offsetWidth/2;nav.scrollTo({left:l,behavior:'smooth'})}};
+const io=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)continue;const a=map.get(e.target.id);if(a)mark(a)}},{rootMargin:'-35% 0px -55% 0px'});
 map.forEach((a,id)=>{const el=document.getElementById(id);if(el)io.observe(el)});
+/* chapter-level: aria-current on the header nav, reset sub-nav when its chapter leaves the viewport */
+const top=[...document.querySelectorAll('.top nav a')];
+const chapIO=new IntersectionObserver(es=>{for(const e of es){
+const id=e.target.id,t=top.find(a=>a.getAttribute('href')==='#'+id);
+if(e.isIntersecting){top.forEach(a=>a.removeAttribute('aria-current'));if(t)t.setAttribute('aria-current','location')}
+else{if(t)t.removeAttribute('aria-current');e.target.querySelectorAll('.side a.on').forEach(x=>x.classList.remove('on'))}
+}},{rootMargin:'-45% 0px -50% 0px'});
+document.querySelectorAll('#terarium,#vyber,#krmeni,#kontakt').forEach(el=>chapIO.observe(el));
 }
 
 {
