@@ -44,11 +44,64 @@ dlg.showModal();
 }
 
 {
-/* scroll reveal: content below the first screen slides up as it enters;
-   grids (tiles, localities) stagger; skipped entirely with reduced motion */
+/* real header height drives the sticky offsets (sub-nav, stage, anchor padding) */
+const top=document.querySelector('.top');
+if(top&&'ResizeObserver' in window){const setH=()=>document.documentElement.style.setProperty('--hdr',top.offsetHeight+'px');new ResizeObserver(setH).observe(top)}
+}
+
+{
+/* chameleons: one drawing (the stage), cloned for the mobile cards and the fern peek.
+   Colours come from data-pal (body, stripe, belly, head), patterns from data-pat. */
+const stage=document.querySelector('.stage-c'),src=stage?.querySelector('.cham-svg');
+const locs=[...document.querySelectorAll('.loc[data-pal]')];
+const keys=['--c-body','--c-stripe','--c-belly','--c-head'];
+const paint=(el,card)=>{card.dataset.pal.split(',').forEach((c,i)=>el.style.setProperty(keys[i],c));el.dataset.pat=card.dataset.pat||''};
+const fresh=id=>{const s=src.cloneNode(true);s.querySelector('clipPath').id='cham-cb-'+id;s.querySelector('[clip-path]').setAttribute('clip-path',`url(#cham-cb-${id})`);return s};
+if(src&&locs.length){
+document.querySelector('.loc-wrap')?.classList.add('js-locs');
+/* phones: every card gets its own small chameleon, nothing to keep in sync */
+locs.forEach((l,i)=>{const m=document.createElement('div');m.className='mini';m.setAttribute('aria-hidden','true');m.append(fresh('m'+i));paint(m,l);l.append(m)});
+/* desktop: the stage follows the card under the pointer, but not cards that merely scroll past it */
+const name=stage.querySelector('.stage-n b');
+let lastScroll=0;addEventListener('scroll',()=>{lastScroll=performance.now()},{passive:true});
+const pick=card=>{if(card.classList.contains('on'))return;locs.forEach(l=>l.classList.toggle('on',l===card));paint(stage,card);name.textContent=card.dataset.name};
+pick(locs[0]);
+locs.forEach(l=>{
+l.addEventListener('click',()=>pick(l));
+l.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&performance.now()-lastScroll>250)pick(l)});
+l.addEventListener('pointermove',e=>{if(e.pointerType==='mouse')pick(l)});
+});
+}
+/* peeking chameleon in Krmení: decorative (hidden from assistive tech), new colours each time it comes out */
+const band=document.getElementById('krmeni');
+if(band&&src&&locs.length){
+band.querySelector(':scope > .fern')?.remove();
+const svg=fresh('peek');svg.querySelectorAll('.br').forEach(x=>x.remove());
+const box=document.createElement('div');box.className='peek';box.setAttribute('aria-hidden','true');
+box.innerHTML='<button class="peek-b" type="button" tabindex="-1"></button><img class="peek-f" src="img/foto-01.webp" alt="" width="251" height="360">';
+const btn=box.querySelector('button');btn.append(svg);band.append(box);
+let shy=false,n=3;const next=()=>locs[n++%locs.length];
+paint(box,next());
+const show=on=>{box.classList.toggle('out',on);if(!on)setTimeout(()=>{if(!box.classList.contains('out'))paint(box,next())},950)};
+btn.addEventListener('click',()=>{shy=box.classList.contains('out');show(!shy)});
+new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting){if(!shy)setTimeout(()=>show(true),350)}else{shy=false;show(false)}}},{threshold:.95}).observe(box);
+}
+/* eyes follow the pointer, like a chameleon's turret eyes */
+let raf=0,px=0,py=0;
+addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;
+document.querySelectorAll('.cham-svg').forEach(svg=>{const r=svg.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight||!r.width)return;
+const m=svg.getScreenCTM();if(!m)return;const ex=m.a*230+m.c*83+m.e,ey=m.b*230+m.d*83+m.f;
+const dx=px-ex,dy=py-ey,d=Math.hypot(dx,dy)||1,k=Math.min(3,d/40);
+svg.querySelector('.pupil').style.transform=`translate(${(dx/d*k-1).toFixed(2)}px,${(dy/d*k+.5).toFixed(2)}px)`;});
+})},{passive:true});
+}
+
+{
+/* scroll reveal (screen only): small pieces below the first screen slide up as they enter;
+   whole cards never animate, so nothing is revealed twice. Skipped with reduced motion. */
 const calm=matchMedia('(prefers-reduced-motion: reduce)');
 if(!calm.matches&&'IntersectionObserver' in window){
-const sel='.chap-h,.card,.pick,.loc,.compare,.sex,.choose,.tiles figure,.sched>div,.day>div';
+const sel='.chap-h,.card>h3,.sec-h,.loc,.compare,.choose,.sex>h3,.tiles figure,.sched>div,.day>div';
 const io=new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}},{rootMargin:'0px 0px -8% 0px',threshold:.08});
 const fold=innerHeight;
 document.querySelectorAll(sel).forEach(el=>{
@@ -58,52 +111,12 @@ const i=sib.indexOf(el);
 if(sib.length>1&&i>0)el.style.setProperty('--d',Math.min(i*70,350)+'ms');
 el.classList.add('rv');io.observe(el);
 });
+const showAll=root=>{if(root.matches?.('.rv'))root.classList.add('in');root.querySelectorAll('.rv').forEach(x=>x.classList.add('in'))};
+/* a jump from the menu lands on finished content, not on a fade */
+document.addEventListener('click',e=>{const a=e.target.closest('a[href^="#"]');if(!a)return;const t=document.getElementById(a.getAttribute('href').slice(1));if(t)showAll(t)});
+addEventListener('beforeprint',()=>showAll(document.body));
 }
 }
 
-{
-/* chameleons: locality stage recolours to the chosen locality; a second one peeks from the fern in Krmení */
-const stage=document.querySelector('.stage-c');
-const locs=[...document.querySelectorAll('.loc[data-pal]')];
-const keys=['--c-body','--c-stripe','--c-belly','--c-head'];
-const paint=(el,pal)=>pal.split(',').forEach((c,i)=>el.style.setProperty(keys[i],c));
-if(stage&&locs.length){
-document.querySelector('.loc-wrap')?.classList.add('js-locs');
-const name=stage.querySelector('.stage-n b');
-const pick=card=>{if(card.classList.contains('on'))return;locs.forEach(l=>l.classList.toggle('on',l===card));paint(stage,card.dataset.pal);name.textContent=card.dataset.name};
-pick(locs[0]);
-locs.forEach(l=>{l.addEventListener('click',()=>pick(l));l.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')pick(l)})});
-const narrow=matchMedia('(max-width:900px)');
-const mid=new IntersectionObserver(es=>{if(!narrow.matches)return;for(const e of es)if(e.isIntersecting)pick(e.target)},{rootMargin:'-48% 0px -40% 0px'});
-locs.forEach(l=>mid.observe(l));
-}
-/* peeking chameleon: cloned from the stage drawing, new colours each time it comes out */
-const band=document.getElementById('krmeni'),src=document.querySelector('.cham-svg');
-if(band&&src){
-band.querySelector(':scope > .fern')?.remove();
-const svg=src.cloneNode(true);
-svg.querySelector('clipPath').id='cham-cb2';svg.querySelector('[clip-path]').setAttribute('clip-path','url(#cham-cb2)');
-svg.querySelector('.br').remove();
-const box=document.createElement('div');box.className='peek';
-box.innerHTML='<button class="peek-b" type="button"></button><img class="peek-f" src="img/foto-01.webp" alt="" width="251" height="360">';
-const btn=box.querySelector('button');btn.append(svg);
-band.append(box);
-let shy=false,n=3;
-const next=()=>locs.length?locs[n++%locs.length].dataset.pal:'#23b7c4,#1c4fb0,#d9f1e4,#1c4fb0';
-paint(box,next());
-/* recolour only while hidden, so it comes out in its new colours */
-const show=on=>{box.classList.toggle('out',on);btn.setAttribute('aria-label',on?'Schovat chameleona':'Přivolat chameleona');
-if(!on)setTimeout(()=>{if(!box.classList.contains('out'))paint(box,next())},950)};
-btn.setAttribute('aria-label','Přivolat chameleona');
-btn.addEventListener('click',()=>{shy=box.classList.contains('out');show(!shy)});
-new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting){if(!shy)setTimeout(()=>show(true),350)}else{shy=false;show(false)}}},{threshold:.95}).observe(box);
-}
-/* eyes follow the pointer, like a chameleon's independent turret eyes */
-let raf=0,px=0,py=0;
-addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;
-document.querySelectorAll('.cham-svg').forEach(svg=>{const r=svg.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight||!r.width)return;
-const m=svg.getScreenCTM();if(!m)return;const ex=m.a*227+m.c*81+m.e,ey=m.b*227+m.d*81+m.f;
-const dx=px-ex,dy=py-ey,d=Math.hypot(dx,dy)||1,k=Math.min(3.2,d/40);
-svg.querySelector('.pupil').style.transform=`translate(${(dx/d*k-1).toFixed(2)}px,${(dy/d*k+.5).toFixed(2)}px)`;});
-})},{passive:true});
-}
+/* printing: lazy images below the fold would otherwise print as empty tiles */
+addEventListener('beforeprint',()=>document.querySelectorAll('img[loading="lazy"]').forEach(i=>{i.loading='eager'}));
