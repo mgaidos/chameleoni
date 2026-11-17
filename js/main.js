@@ -60,3 +60,50 @@ el.classList.add('rv');io.observe(el);
 });
 }
 }
+
+{
+/* chameleons: locality stage recolours to the chosen locality; a second one peeks from the fern in Krmení */
+const stage=document.querySelector('.stage-c');
+const locs=[...document.querySelectorAll('.loc[data-pal]')];
+const keys=['--c-body','--c-stripe','--c-belly','--c-head'];
+const paint=(el,pal)=>pal.split(',').forEach((c,i)=>el.style.setProperty(keys[i],c));
+if(stage&&locs.length){
+document.querySelector('.loc-wrap')?.classList.add('js-locs');
+const name=stage.querySelector('.stage-n b');
+const pick=card=>{if(card.classList.contains('on'))return;locs.forEach(l=>l.classList.toggle('on',l===card));paint(stage,card.dataset.pal);name.textContent=card.dataset.name};
+pick(locs[0]);
+locs.forEach(l=>{l.addEventListener('click',()=>pick(l));l.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')pick(l)})});
+const narrow=matchMedia('(max-width:900px)');
+const mid=new IntersectionObserver(es=>{if(!narrow.matches)return;for(const e of es)if(e.isIntersecting)pick(e.target)},{rootMargin:'-48% 0px -40% 0px'});
+locs.forEach(l=>mid.observe(l));
+}
+/* peeking chameleon: cloned from the stage drawing, new colours each time it comes out */
+const band=document.getElementById('krmeni'),src=document.querySelector('.cham-svg');
+if(band&&src){
+band.querySelector(':scope > .fern')?.remove();
+const svg=src.cloneNode(true);
+svg.querySelector('clipPath').id='cham-cb2';svg.querySelector('[clip-path]').setAttribute('clip-path','url(#cham-cb2)');
+svg.querySelector('.br').remove();
+const box=document.createElement('div');box.className='peek';
+box.innerHTML='<button class="peek-b" type="button"></button><img class="peek-f" src="img/foto-01.webp" alt="" width="251" height="360">';
+const btn=box.querySelector('button');btn.append(svg);
+band.append(box);
+let shy=false,n=3;
+const next=()=>locs.length?locs[n++%locs.length].dataset.pal:'#23b7c4,#1c4fb0,#d9f1e4,#1c4fb0';
+paint(box,next());
+/* recolour only while hidden, so it comes out in its new colours */
+const show=on=>{box.classList.toggle('out',on);btn.setAttribute('aria-label',on?'Schovat chameleona':'Přivolat chameleona');
+if(!on)setTimeout(()=>{if(!box.classList.contains('out'))paint(box,next())},950)};
+btn.setAttribute('aria-label','Přivolat chameleona');
+btn.addEventListener('click',()=>{shy=box.classList.contains('out');show(!shy)});
+new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting){if(!shy)setTimeout(()=>show(true),350)}else{shy=false;show(false)}}},{threshold:.95}).observe(box);
+}
+/* eyes follow the pointer, like a chameleon's independent turret eyes */
+let raf=0,px=0,py=0;
+addEventListener('pointermove',e=>{px=e.clientX;py=e.clientY;if(raf)return;raf=requestAnimationFrame(()=>{raf=0;
+document.querySelectorAll('.cham-svg').forEach(svg=>{const r=svg.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight||!r.width)return;
+const m=svg.getScreenCTM();if(!m)return;const ex=m.a*227+m.c*81+m.e,ey=m.b*227+m.d*81+m.f;
+const dx=px-ex,dy=py-ey,d=Math.hypot(dx,dy)||1,k=Math.min(3.2,d/40);
+svg.querySelector('.pupil').style.transform=`translate(${(dx/d*k-1).toFixed(2)}px,${(dy/d*k+.5).toFixed(2)}px)`;});
+})},{passive:true});
+}

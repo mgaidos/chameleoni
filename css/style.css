@@ -221,6 +221,36 @@ html{scroll-padding-top:calc(var(--hdr) + 76px)}
 .sexpic{float:none;width:min(70%,240px);margin:0 auto 12px}
 .call-n{display:none}.call-l{display:inline}
 }
+/* chameleons: drawn SVG; colours come from --c-* so the locality stage can recolour it */
+.cham-svg{display:block;width:100%;height:auto;overflow:visible}
+.cham-svg .cf{fill:var(--c-body)}.cham-svg .cb{stroke:var(--c-body)}.cham-svg .ef{fill:var(--c-body);stroke:rgba(0,0,0,.18);stroke-width:2}
+.cham-svg .sf{fill:var(--c-stripe)}.cham-svg .cs{stroke:var(--c-stripe)}
+.cham-svg .bl{stroke:var(--c-belly)}.cham-svg .hf{fill:var(--c-head)}
+.cham-svg .br{fill:none;stroke:#7b5a3c;stroke-width:10;stroke-linecap:round}
+.cham-svg .cf,.cham-svg .cb,.cham-svg .ef,.cham-svg .sf,.cham-svg .cs,.cham-svg .bl,.cham-svg .hf{transition:fill .8s ease,stroke .8s ease}
+.cham-svg .pupil{transition:transform .25s ease-out}
+.loc-wrap{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:22px;align-items:start}
+.loc-wrap .locs{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
+.stage-c{--c-body:#1fb5b0;--c-stripe:#d8352a;--c-belly:#f08a24;--c-head:#2a6fd6;position:sticky;top:calc(var(--hdr) + 24px);margin:0;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 14px 12px;z-index:4}
+.stage-n{text-align:center;margin-top:6px;font-size:.9375rem}
+.stage-n span{color:var(--soft)}
+.stage-n b{font-family:Anton,"Arial Narrow",sans-serif;font-weight:400;font-size:1.375rem;color:var(--deep);letter-spacing:.01em}
+.js-locs .loc{cursor:pointer;transition:box-shadow .3s ease,border-color .3s ease}
+.loc.on{border-color:var(--deep);box-shadow:inset 0 0 0 1px var(--deep)}
+.peek{position:absolute;left:0;bottom:0;width:240px;height:136px;z-index:0}
+.peek-b{all:unset;position:absolute;inset:0;cursor:pointer;border-radius:16px}
+.peek-b:focus-visible{outline:3px solid var(--bandink);outline-offset:-3px}
+.peek .cham-svg{position:absolute;width:230px;left:-84px;bottom:-34px;transform:translateX(-150px) rotate(-4deg);transition:transform .9s cubic-bezier(.16,1,.3,1)}
+.peek.out .cham-svg{transform:translateX(0) rotate(-4deg)}
+.peek-f{position:absolute;width:120px;left:-46px;bottom:-118px;transform:rotate(58deg);pointer-events:none}
+@media(max-width:900px){
+.loc-wrap{grid-template-columns:minmax(0,1fr);gap:14px}
+.stage-c{top:calc(var(--hdr) + 60px);display:grid;grid-template-columns:150px minmax(0,1fr);align-items:center;gap:6px 14px;padding:8px 14px;box-shadow:0 10px 14px -12px rgba(0,0,0,.35)}
+.stage-n{text-align:left;margin:0}
+.stage-n span{display:block;font-size:.8125rem}
+}
+@media(max-width:480px){.loc-wrap .locs{grid-template-columns:minmax(0,1fr)}.peek{width:170px;height:100px}.peek .cham-svg{width:170px;left:-62px;bottom:-26px}.peek-f{width:92px;left:-36px;bottom:-92px}}
+@media(prefers-reduced-motion:reduce){.cham-svg *{transition:none!important}.peek .cham-svg{transition:none}}
 /* scroll reveal: classes are added by js/main.js only to content below the first screen,
    so without JS or with reduced motion everything is simply visible */
 @media(prefers-reduced-motion:no-preference){
