@@ -42,3 +42,21 @@ dlg.showModal();
 });
 }
 }
+
+{
+/* scroll reveal: content below the first screen slides up as it enters;
+   grids (tiles, localities) stagger; skipped entirely with reduced motion */
+const calm=matchMedia('(prefers-reduced-motion: reduce)');
+if(!calm.matches&&'IntersectionObserver' in window){
+const sel='.chap-h,.card,.pick,.loc,.compare,.sex,.choose,.tiles figure,.sched>div,.day>div';
+const io=new IntersectionObserver(es=>{for(const e of es){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}},{rootMargin:'0px 0px -8% 0px',threshold:.08});
+const fold=innerHeight;
+document.querySelectorAll(sel).forEach(el=>{
+if(el.getBoundingClientRect().top<fold)return;
+const sib=el.parentElement?[...el.parentElement.children].filter(x=>x.matches(sel)):[];
+const i=sib.indexOf(el);
+if(sib.length>1&&i>0)el.style.setProperty('--d',Math.min(i*70,350)+'ms');
+el.classList.add('rv');io.observe(el);
+});
+}
+}
