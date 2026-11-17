@@ -1,10 +1,11 @@
 {
 /* sub-chapter scroll-spy: highlights the current item, clears it when you leave the chapter,
    keeps the active pill visible in the horizontally scrolling mobile bar */
+const calm=matchMedia('(prefers-reduced-motion: reduce)');
 const links=[...document.querySelectorAll('.side a')];
 const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
 const mark=a=>{const nav=a.parentElement;nav.querySelectorAll('a').forEach(x=>x.classList.toggle('on',x===a));
-if(nav.scrollWidth>nav.clientWidth){const l=a.offsetLeft-nav.clientWidth/2+a.offsetWidth/2;nav.scrollTo({left:l,behavior:'smooth'})}};
+if(nav.scrollWidth>nav.clientWidth){const l=a.offsetLeft-nav.clientWidth/2+a.offsetWidth/2;nav.scrollTo({left:l,behavior:calm.matches?'auto':'smooth'})}};
 const io=new IntersectionObserver(es=>{for(const e of es){if(!e.isIntersecting)continue;const a=map.get(e.target.id);if(a)mark(a)}},{rootMargin:'-35% 0px -55% 0px'});
 map.forEach((a,id)=>{const el=document.getElementById(id);if(el)io.observe(el)});
 /* chapter-level: aria-current on the header nav, reset sub-nav when its chapter leaves the viewport */
